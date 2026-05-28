@@ -130,6 +130,24 @@ final class FolderStore: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([resolvedURL])
     }
 
+    func openInTerminal(_ item: FolderItem) {
+        guard let resolvedURL = resolvedURL(for: item) else {
+            errorMessage = "Folder is no longer available."
+            return
+        }
+
+        guard itemExists(at: resolvedURL) else {
+            errorMessage = "Folder is no longer available."
+            return
+        }
+
+        do {
+            try TerminalLauncher.open(folderURL: resolvedURL, terminal: TerminalApp.selected)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func clearRecents() {
         items.removeAll { !$0.isPinned }
         for index in items.indices {

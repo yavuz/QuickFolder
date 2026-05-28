@@ -49,6 +49,11 @@ struct FolderRowView: View {
             }
             .disabled(!item.exists)
 
+            Button("Open in Terminal") {
+                store.openInTerminal(item)
+            }
+            .disabled(!item.exists)
+
             Button("Remove from Recent") {
                 store.removeFromRecents(item)
             }
@@ -125,6 +130,15 @@ struct FolderRowView: View {
             .buttonStyle(.borderless)
             .disabled(!item.exists)
             .help("Reveal in Finder")
+
+            Button {
+                store.openInTerminal(item)
+            } label: {
+                Image(systemName: "terminal")
+            }
+            .buttonStyle(.borderless)
+            .disabled(!item.exists)
+            .help("Open in Terminal")
 
             Button {
                 store.removeFromRecents(item)

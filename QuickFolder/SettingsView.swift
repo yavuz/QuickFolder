@@ -5,6 +5,9 @@ struct SettingsView: View {
     @StateObject private var loginItemController = LoginItemController()
     @AppStorage(PreferenceKeys.recentLimit) private var recentLimit = 25
     @AppStorage(PreferenceKeys.finderHistoryEnabled) private var finderHistoryEnabled = true
+    @AppStorage(PreferenceKeys.hotKeyKey) private var hotKeyKey = HotKeyConfig.defaultKey
+    @AppStorage(PreferenceKeys.hotKeyModifiers) private var hotKeyModifiers = HotKeyConfig.defaultModifiers
+    @AppStorage(PreferenceKeys.selectedTerminal) private var selectedTerminal = TerminalApp.terminal.rawValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -42,6 +45,34 @@ struct SettingsView: View {
                         }
                     }
 
+                Picker("Open folders in terminal with", selection: $selectedTerminal) {
+                    ForEach(TerminalApp.allCases) { terminal in
+                        Text(terminal.displayName).tag(terminal.rawValue)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Global shortcut")
+                        .font(.headline)
+
+                    HStack(spacing: 10) {
+                        ForEach(HotKeyModifierOption.allCases) { modifier in
+                            Toggle(modifier.symbol, isOn: modifierBinding(modifier))
+                                .toggleStyle(.button)
+                                .help(modifier.label)
+                        }
+
+                        TextField("Key", text: hotKeyKeyBinding)
+                            .multilineTextAlignment(.center)
+                            .frame(width: 48)
+                            .textFieldStyle(.roundedBorder)
+
+                        Text(HotKeyConfig.current.displayString)
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 58, alignment: .leading)
+                    }
+                }
+
                 Button(role: .destructive) {
                     store.clearRecents()
                 } label: {
@@ -61,5 +92,30 @@ struct SettingsView: View {
         .onAppear {
             loginItemController.refresh()
         }
+    }
+
+    private var hotKeyKeyBinding: Binding<String> {
+        Binding(
+            get: { hotKeyKey },
+            set: { newValue in
+                if let key = HotKeyConfig.sanitizedKey(newValue) {
+                    hotKeyKey = key
+                }
+            }
+        )
+    }
+
+    private func modifierBinding(_ modifier: HotKeyModifierOption) -> Binding<Bool> {
+        Binding(
+            get: { hotKeyModifiers & modifier.carbonValue != 0 },
+            set: { isEnabled in
+                if isEnabled {
+                    hotKeyModifiers |= modifier.carbonValue
+                } else {
+                    let updatedModifiers = hotKeyModifiers & ~modifier.carbonValue
+                    hotKeyModifiers = updatedModifiers == 0 ? HotKeyConfig.defaultModifiers : updatedModifiers
+                }
+            }
+        )
     }
 }

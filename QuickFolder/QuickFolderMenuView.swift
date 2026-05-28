@@ -5,6 +5,8 @@ struct QuickFolderMenuView: View {
     @Environment(\.openSettings) private var openSettings
     @EnvironmentObject private var store: FolderStore
     @State private var query = ""
+    @AppStorage(PreferenceKeys.pinnedSectionExpanded) private var pinnedSectionExpanded = true
+    @AppStorage(PreferenceKeys.recentSectionExpanded) private var recentSectionExpanded = true
 
     private var filteredPinned: [FolderItem] {
         filter(store.pinnedItems)
@@ -97,8 +99,20 @@ struct QuickFolderMenuView: View {
                     errorBanner(errorMessage)
                 }
 
-                section(title: "Pinned", items: filteredPinned, emptySystemImage: "pin", emptyTitle: "No pinned folders")
-                section(title: "Recent", items: filteredRecent, emptySystemImage: "clock", emptyTitle: "No recent folders")
+                section(
+                    title: "Pinned",
+                    items: filteredPinned,
+                    isExpanded: $pinnedSectionExpanded,
+                    emptySystemImage: "pin",
+                    emptyTitle: "No pinned folders"
+                )
+                section(
+                    title: "Recent",
+                    items: filteredRecent,
+                    isExpanded: $recentSectionExpanded,
+                    emptySystemImage: "clock",
+                    emptyTitle: "No recent folders"
+                )
             }
             .padding(16)
         }
@@ -117,15 +131,6 @@ struct QuickFolderMenuView: View {
             Spacer()
 
             Button {
-                store.clearRecents()
-            } label: {
-                Image(systemName: "clock.badge.xmark")
-            }
-            .buttonStyle(.borderless)
-            .disabled(store.recentItems.isEmpty)
-            .help("Clear recents")
-
-            Button {
                 NSApp.terminate(nil)
             } label: {
                 Image(systemName: "power")
@@ -137,20 +142,44 @@ struct QuickFolderMenuView: View {
         .padding(.vertical, 12)
     }
 
-    private func section(title: String, items: [FolderItem], emptySystemImage: String, emptyTitle: String) -> some View {
+    private func section(
+        title: String,
+        items: [FolderItem],
+        isExpanded: Binding<Bool>,
+        emptySystemImage: String,
+        emptyTitle: String
+    ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
+            Button {
+                isExpanded.wrappedValue.toggle()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: isExpanded.wrappedValue ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 12)
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    Text("\(items.count)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
-            if items.isEmpty {
-                EmptySectionView(systemImage: emptySystemImage, title: emptyTitle)
-            } else {
-                VStack(spacing: 6) {
-                    ForEach(items) { item in
-                        FolderRowView(item: item)
-                            .environmentObject(store)
+            if isExpanded.wrappedValue {
+                if items.isEmpty {
+                    EmptySectionView(systemImage: emptySystemImage, title: emptyTitle)
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(items) { item in
+                            FolderRowView(item: item)
+                                .environmentObject(store)
+                        }
                     }
                 }
             }

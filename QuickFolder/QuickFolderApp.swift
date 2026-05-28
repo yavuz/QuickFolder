@@ -8,7 +8,12 @@ struct QuickFolderApp: App {
     init() {
         UserDefaults.standard.register(defaults: [
             PreferenceKeys.recentLimit: 25,
-            PreferenceKeys.finderHistoryEnabled: true
+            PreferenceKeys.finderHistoryEnabled: true,
+            PreferenceKeys.hotKeyKey: HotKeyConfig.defaultKey,
+            PreferenceKeys.hotKeyModifiers: HotKeyConfig.defaultModifiers,
+            PreferenceKeys.selectedTerminal: TerminalApp.terminal.rawValue,
+            PreferenceKeys.pinnedSectionExpanded: true,
+            PreferenceKeys.recentSectionExpanded: true
         ])
     }
 
@@ -26,11 +31,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private let hotKeyManager = GlobalHotKeyManager()
+    private var defaultsObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         installStatusItem()
         installPopover()
+        installHotKey()
+        observePreferenceChanges()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        hotKeyManager.unregister()
+        if let defaultsObserver {
+            NotificationCenter.default.removeObserver(defaultsObserver)
+        }
     }
 
     private func installStatusItem() {
@@ -61,6 +77,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.popover = popover
     }
 
+    private func installHotKey() {
+        hotKeyManager.onHotKey = { [weak self] in
+            self?.togglePopover(nil)
+        }
+        registerHotKey()
+    }
+
+    private func observePreferenceChanges() {
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.registerHotKey()
+            }
+        }
+    }
+
+    private func registerHotKey() {
+        let config = HotKeyConfig.current
+        let status = hotKeyManager.register(config)
+        if status == noErr {
+            if store.errorMessage?.hasPrefix("Could not register shortcut") == true {
+                store.errorMessage = nil
+            }
+        } else {
+            store.errorMessage = "Could not register shortcut \(config.displayString). Try another shortcut."
+        }
+    }
+
     @objc private func togglePopover(_ sender: Any?) {
         guard let button = statusItem?.button, let popover else { return }
 
@@ -77,4 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 enum PreferenceKeys {
     static let recentLimit = "recentLimit"
     static let finderHistoryEnabled = "finderHistoryEnabled"
+    static let hotKeyKey = "hotKeyKey"
+    static let hotKeyModifiers = "hotKeyModifiers"
+    static let selectedTerminal = "selectedTerminal"
+    static let pinnedSectionExpanded = "pinnedSectionExpanded"
+    static let recentSectionExpanded = "recentSectionExpanded"
 }

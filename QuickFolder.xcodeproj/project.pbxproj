@@ -15,6 +15,9 @@
 		01A000000000000000000106 /* QuickFolderMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000006 /* QuickFolderMenuView.swift */; };
 		01A000000000000000000107 /* FolderRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000007 /* FolderRowView.swift */; };
 		01A000000000000000000108 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000008 /* SettingsView.swift */; };
+		01A000000000000000000109 /* HotKeyConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000011 /* HotKeyConfig.swift */; };
+		01A000000000000000000110 /* GlobalHotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000012 /* GlobalHotKeyManager.swift */; };
+		01A000000000000000000111 /* TerminalLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000013 /* TerminalLauncher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +31,9 @@
 		01A000000000000000000008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		01A000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		01A000000000000000000010 /* QuickFolder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickFolder.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		01A000000000000000000011 /* HotKeyConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyConfig.swift; sourceTree = "<group>"; };
+		01A000000000000000000012 /* GlobalHotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyManager.swift; sourceTree = "<group>"; };
+		01A000000000000000000013 /* TerminalLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLauncher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +63,9 @@
 				01A000000000000000000003 /* FolderStore.swift */,
 				01A000000000000000000004 /* FinderRecentProvider.swift */,
 				01A000000000000000000005 /* LoginItemController.swift */,
+				01A000000000000000000011 /* HotKeyConfig.swift */,
+				01A000000000000000000012 /* GlobalHotKeyManager.swift */,
+				01A000000000000000000013 /* TerminalLauncher.swift */,
 				01A000000000000000000006 /* QuickFolderMenuView.swift */,
 				01A000000000000000000007 /* FolderRowView.swift */,
 				01A000000000000000000008 /* SettingsView.swift */,
@@ -149,6 +158,9 @@
 				01A000000000000000000106 /* QuickFolderMenuView.swift in Sources */,
 				01A000000000000000000107 /* FolderRowView.swift in Sources */,
 				01A000000000000000000108 /* SettingsView.swift in Sources */,
+				01A000000000000000000109 /* HotKeyConfig.swift in Sources */,
+				01A000000000000000000110 /* GlobalHotKeyManager.swift in Sources */,
+				01A000000000000000000111 /* TerminalLauncher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
