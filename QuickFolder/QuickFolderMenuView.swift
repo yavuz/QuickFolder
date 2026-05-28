@@ -5,6 +5,7 @@ struct QuickFolderMenuView: View {
     @Environment(\.openSettings) private var openSettings
     @EnvironmentObject private var store: FolderStore
     @State private var query = ""
+    @FocusState private var isSearchFocused: Bool
     @AppStorage(PreferenceKeys.pinnedSectionExpanded) private var pinnedSectionExpanded = true
     @AppStorage(PreferenceKeys.recentSectionExpanded) private var recentSectionExpanded = true
 
@@ -32,6 +33,10 @@ struct QuickFolderMenuView: View {
         .background(.regularMaterial)
         .onAppear {
             store.refreshFinderRecents()
+            focusSearch()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didShowNotification)) { _ in
+            focusSearch()
         }
         .onSubmit {
             if let firstResult {
@@ -84,6 +89,7 @@ struct QuickFolderMenuView: View {
                     .foregroundStyle(.secondary)
                 TextField("Search folders", text: $query)
                     .textFieldStyle(.plain)
+                    .focused($isSearchFocused)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
@@ -213,6 +219,13 @@ struct QuickFolderMenuView: View {
         return items.filter { item in
             item.displayName.localizedCaseInsensitiveContains(trimmedQuery)
                 || item.path.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
+
+    private func focusSearch() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            isSearchFocused = true
         }
     }
 }
