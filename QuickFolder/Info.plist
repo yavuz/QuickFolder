@@ -24,5 +24,7 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 QuickFolder. All rights reserved.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>QuickFolder uses Automation to open selected folders in terminal apps that support AppleScript.</string>
 </dict>
 </plist>

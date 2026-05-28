@@ -34,6 +34,7 @@
 		01A000000000000000000011 /* HotKeyConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyConfig.swift; sourceTree = "<group>"; };
 		01A000000000000000000012 /* GlobalHotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyManager.swift; sourceTree = "<group>"; };
 		01A000000000000000000013 /* TerminalLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLauncher.swift; sourceTree = "<group>"; };
+		01A000000000000000000014 /* QuickFolder.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickFolder.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +71,7 @@
 				01A000000000000000000007 /* FolderRowView.swift */,
 				01A000000000000000000008 /* SettingsView.swift */,
 				01A000000000000000000009 /* Info.plist */,
+				01A000000000000000000014 /* QuickFolder.entitlements */,
 			);
 			path = QuickFolder;
 			sourceTree = "<group>";
@@ -286,6 +288,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = QuickFolder/QuickFolder.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
@@ -308,6 +311,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = QuickFolder/QuickFolder.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";

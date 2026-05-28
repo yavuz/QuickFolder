@@ -33,6 +33,7 @@ enum TerminalApp: String, CaseIterable, Identifiable {
 enum TerminalLaunchError: LocalizedError {
     case appNotFound(String)
     case scriptFailed(String)
+    case automationDenied(String)
 
     var errorDescription: String? {
         switch self {
@@ -40,6 +41,8 @@ enum TerminalLaunchError: LocalizedError {
             return "\(name) could not be found."
         case let .scriptFailed(message):
             return message
+        case let .automationDenied(name):
+            return "QuickFolder needs Automation permission to control \(name). Allow it in System Settings > Privacy & Security > Automation."
         }
     }
 }
@@ -49,22 +52,12 @@ enum TerminalLauncher {
     static func open(folderURL: URL, terminal: TerminalApp) throws {
         switch terminal {
         case .terminal:
-            try runAppleScript(terminalScript(for: folderURL))
+            try openFolderDocument(folderURL, with: .terminal)
         case .iterm:
-            try runAppleScript(iTermScript(for: folderURL))
+            try runAppleScript(iTermScript(for: folderURL), appName: TerminalApp.iterm.displayName)
         case .ghostty:
             try openGhostty(at: folderURL)
         }
-    }
-
-    private static func terminalScript(for folderURL: URL) -> String {
-        """
-        set targetPath to "\(folderURL.path.appleScriptEscaped)"
-        tell application "Terminal"
-            activate
-            do script "cd " & quoted form of targetPath
-        end tell
-        """
     }
 
     private static func iTermScript(for folderURL: URL) -> String {
@@ -82,7 +75,21 @@ enum TerminalLauncher {
         """
     }
 
-    private static func runAppleScript(_ source: String) throws {
+    private static func openFolderDocument(_ folderURL: URL, with terminal: TerminalApp) throws {
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) else {
+            throw TerminalLaunchError.appNotFound(terminal.displayName)
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.open([folderURL], withApplicationAt: appURL, configuration: configuration) { _, error in
+            if let error {
+                NSLog("QuickFolder could not open folder in \(terminal.displayName): \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private static func runAppleScript(_ source: String, appName: String) throws {
         var error: NSDictionary?
         guard let script = NSAppleScript(source: source) else {
             throw TerminalLaunchError.scriptFailed("Could not create terminal script.")
@@ -90,6 +97,9 @@ enum TerminalLauncher {
 
         script.executeAndReturnError(&error)
         if let error {
+            if (error[NSAppleScript.errorNumber] as? Int) == -1743 {
+                throw TerminalLaunchError.automationDenied(appName)
+            }
             let message = error[NSAppleScript.errorMessage] as? String ?? "Could not open folder in terminal."
             throw TerminalLaunchError.scriptFailed(message)
         }
