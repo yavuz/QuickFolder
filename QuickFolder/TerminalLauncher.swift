@@ -24,6 +24,15 @@ enum TerminalApp: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Application name passed to `/usr/bin/open -a`.
+    var openCLIApplicationName: String {
+        switch self {
+        case .terminal: return "Terminal"
+        case .iterm: return "iTerm"
+        case .ghostty: return "Ghostty"
+        }
+    }
+
     static var selected: TerminalApp {
         let value = UserDefaults.standard.string(forKey: PreferenceKeys.selectedTerminal)
         return TerminalApp(rawValue: value ?? "") ?? .terminal
@@ -32,17 +41,17 @@ enum TerminalApp: String, CaseIterable, Identifiable {
 
 enum TerminalLaunchError: LocalizedError {
     case appNotFound(String)
-    case scriptFailed(String)
+    case launchFailed(String)
     case automationDenied(String)
 
     var errorDescription: String? {
         switch self {
         case let .appNotFound(name):
             return "\(name) could not be found."
-        case let .scriptFailed(message):
+        case let .launchFailed(message):
             return message
         case let .automationDenied(name):
-            return "QuickFolder needs Automation permission to control \(name). Allow it in System Settings > Privacy & Security > Automation."
+            return "QuickFolder needs permission to control \(name). Open System Settings → Privacy & Security → Automation and allow QuickFolder for \(name)."
         }
     }
 }
@@ -51,48 +60,62 @@ enum TerminalLauncher {
     @MainActor
     static func open(folderURL: URL, terminal: TerminalApp) throws {
         switch terminal {
-        case .terminal:
-            try openFolderDocument(folderURL, with: .terminal)
-        case .iterm:
-            try runAppleScript(iTermScript(for: folderURL), appName: TerminalApp.iterm.displayName)
+        case .terminal, .iterm:
+            try openWithOpenCLI(terminal: terminal, folderURL: folderURL)
         case .ghostty:
             try openGhostty(at: folderURL)
         }
     }
 
-    private static func iTermScript(for folderURL: URL) -> String {
-        """
-        set targetPath to "\(folderURL.path.appleScriptEscaped)"
-        tell application "iTerm"
-            activate
-            if (count of windows) = 0 then
-                create window with default profile
-            end if
-            tell current session of current window
-                write text "cd " & quoted form of targetPath
-            end tell
-        end tell
-        """
-    }
-
-    private static func openFolderDocument(_ folderURL: URL, with terminal: TerminalApp) throws {
-        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) else {
+    /// Opens a folder in Terminal/iTerm via `open -a` (no Automation permission required).
+    private static func openWithOpenCLI(terminal: TerminalApp, folderURL: URL) throws {
+        guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) != nil else {
             throw TerminalLaunchError.appNotFound(terminal.displayName)
         }
 
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        NSWorkspace.shared.open([folderURL], withApplicationAt: appURL, configuration: configuration) { _, error in
-            if let error {
-                NSLog("QuickFolder could not open folder in \(terminal.displayName): \(error.localizedDescription)")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = ["-na", terminal.openCLIApplicationName, folderURL.path]
+        try process.run()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            throw TerminalLaunchError.launchFailed("Could not open folder in \(terminal.displayName).")
+        }
+    }
+
+    /// Ghostty 1.3+ exposes AppleScript for new windows with a working directory.
+    private static func openGhostty(at folderURL: URL) throws {
+        guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: TerminalApp.ghostty.bundleIdentifier) != nil else {
+            throw TerminalLaunchError.appNotFound(TerminalApp.ghostty.displayName)
+        }
+
+        let path = folderURL.standardizedFileURL.path
+        let script = """
+        tell application "Ghostty"
+            activate
+            set cfg to new surface configuration
+            set initial working directory of cfg to "\(path.appleScriptEscaped)"
+            new window with configuration cfg
+        end tell
+        """
+
+        do {
+            try runAppleScript(script, appName: TerminalApp.ghostty.displayName)
+        } catch let error as TerminalLaunchError {
+            if case .automationDenied = error {
+                throw error
             }
+            throw error
+        } catch {
+            throw TerminalLaunchError.launchFailed("Could not open folder in Ghostty.")
         }
     }
 
     private static func runAppleScript(_ source: String, appName: String) throws {
         var error: NSDictionary?
         guard let script = NSAppleScript(source: source) else {
-            throw TerminalLaunchError.scriptFailed("Could not create terminal script.")
+            throw TerminalLaunchError.launchFailed("Could not create terminal script.")
         }
 
         script.executeAndReturnError(&error)
@@ -101,20 +124,8 @@ enum TerminalLauncher {
                 throw TerminalLaunchError.automationDenied(appName)
             }
             let message = error[NSAppleScript.errorMessage] as? String ?? "Could not open folder in terminal."
-            throw TerminalLaunchError.scriptFailed(message)
+            throw TerminalLaunchError.launchFailed(message)
         }
-    }
-
-    @MainActor
-    private static func openGhostty(at folderURL: URL) throws {
-        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: TerminalApp.ghostty.bundleIdentifier) else {
-            throw TerminalLaunchError.appNotFound(TerminalApp.ghostty.displayName)
-        }
-
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        configuration.arguments = ["--working-directory=\(folderURL.path)"]
-        NSWorkspace.shared.openApplication(at: appURL, configuration: configuration)
     }
 }
 

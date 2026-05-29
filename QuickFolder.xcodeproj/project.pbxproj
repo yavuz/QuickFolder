@@ -18,6 +18,7 @@
 		01A000000000000000000109 /* HotKeyConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000011 /* HotKeyConfig.swift */; };
 		01A000000000000000000110 /* GlobalHotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000012 /* GlobalHotKeyManager.swift */; };
 		01A000000000000000000111 /* TerminalLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000013 /* TerminalLauncher.swift */; };
+		01A000000000000000000116 /* CenterLauncherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A000000000000000000015 /* CenterLauncherPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		01A000000000000000000012 /* GlobalHotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyManager.swift; sourceTree = "<group>"; };
 		01A000000000000000000013 /* TerminalLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLauncher.swift; sourceTree = "<group>"; };
 		01A000000000000000000014 /* QuickFolder.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickFolder.entitlements; sourceTree = "<group>"; };
+		01A000000000000000000015 /* CenterLauncherPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterLauncherPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 				01A000000000000000000006 /* QuickFolderMenuView.swift */,
 				01A000000000000000000007 /* FolderRowView.swift */,
 				01A000000000000000000008 /* SettingsView.swift */,
+				01A000000000000000000015 /* CenterLauncherPanel.swift */,
 				01A000000000000000000009 /* Info.plist */,
 				01A000000000000000000014 /* QuickFolder.entitlements */,
 			);
@@ -163,6 +166,7 @@
 				01A000000000000000000109 /* HotKeyConfig.swift in Sources */,
 				01A000000000000000000110 /* GlobalHotKeyManager.swift in Sources */,
 				01A000000000000000000111 /* TerminalLauncher.swift in Sources */,
+				01A000000000000000000116 /* CenterLauncherPanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

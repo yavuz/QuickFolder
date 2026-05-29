@@ -130,22 +130,49 @@ final class FolderStore: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([resolvedURL])
     }
 
-    func openInTerminal(_ item: FolderItem) {
-        guard let resolvedURL = resolvedURL(for: item) else {
+    @discardableResult
+    func openInTerminal(_ item: FolderItem) -> Bool {
+        withResolvedFolderAccess(for: item) { url in
+            self.openInTerminal(at: url)
+        }
+    }
+
+    @discardableResult
+    private func openInTerminal(at url: URL) -> Bool {
+        do {
+            try TerminalLauncher.open(folderURL: url, terminal: TerminalApp.selected)
+            errorMessage = nil
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @discardableResult
+    private func withResolvedFolderAccess(for item: FolderItem, perform: (URL) -> Bool) -> Bool {
+        guard let index = index(for: item) else { return false }
+        guard let resolvedURL = resolvedURL(for: items[index]) else {
             errorMessage = "Folder is no longer available."
-            return
+            return false
+        }
+
+        var accessWasStarted = false
+        if items[index].bookmarkData != nil {
+            accessWasStarted = resolvedURL.startAccessingSecurityScopedResource()
+        }
+        defer {
+            if accessWasStarted {
+                resolvedURL.stopAccessingSecurityScopedResource()
+            }
         }
 
         guard itemExists(at: resolvedURL) else {
             errorMessage = "Folder is no longer available."
-            return
+            return false
         }
 
-        do {
-            try TerminalLauncher.open(folderURL: resolvedURL, terminal: TerminalApp.selected)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        return perform(resolvedURL)
     }
 
     func clearRecents() {
@@ -301,5 +328,84 @@ final class FolderStore: ObservableObject {
         case (nil, nil):
             return nil
         }
+    }
+}
+
+enum FolderSearchRanker {
+    static func rankedItems(from items: [FolderItem], query: String) -> [FolderItem] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            return defaultOrder(items)
+        }
+
+        return items
+            .compactMap { item -> (FolderItem, Int)? in
+                let score = relevanceScore(for: item, query: trimmedQuery)
+                guard score > 0 else { return nil }
+                return (item, score)
+            }
+            .sorted { left, right in
+                if left.1 != right.1 {
+                    return left.1 > right.1
+                }
+                return left.0.displayName.localizedCaseInsensitiveCompare(right.0.displayName) == .orderedAscending
+            }
+            .map(\.0)
+    }
+
+    private static func defaultOrder(_ items: [FolderItem]) -> [FolderItem] {
+        let pinned = items
+            .filter(\.isPinned)
+            .sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+        let pinnedIDs = Set(pinned.map(\.id))
+        let recent = items
+            .filter { !pinnedIDs.contains($0.id) && $0.lastOpenedAt != nil }
+            .sorted { ($0.lastOpenedAt ?? .distantPast) > ($1.lastOpenedAt ?? .distantPast) }
+        return pinned + recent
+    }
+
+    private static func relevanceScore(for item: FolderItem, query: String) -> Int {
+        let normalizedQuery = query.lowercased()
+        let name = item.displayName.lowercased()
+        let path = item.path.lowercased()
+
+        var score = 0
+
+        if name == normalizedQuery {
+            score += 120
+        } else if name.hasPrefix(normalizedQuery) {
+            score += 90
+        } else if name.contains(normalizedQuery) {
+            score += 60
+        }
+
+        if path.contains(normalizedQuery) {
+            score += 35
+        }
+
+        guard score > 0 else { return 0 }
+
+        if item.isPinned {
+            score += 25
+        }
+
+        score += min(item.openCount * 3, 30)
+
+        if let lastOpenedAt = item.lastOpenedAt {
+            let age = Date().timeIntervalSince(lastOpenedAt)
+            if age < 86_400 {
+                score += 20
+            } else if age < 604_800 {
+                score += 10
+            }
+        }
+
+        if !item.exists {
+            score -= 40
+        }
+
+        return score
     }
 }
